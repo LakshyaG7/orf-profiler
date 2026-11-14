@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: pip install -e ".[dev]"
+      # Snakemake needs Python 3.11+, so the workflow test runs on 3.12 only
+      # and is skipped automatically on 3.10.
+      - name: Install Snakemake
+        if: matrix.python-version == '3.12'
+        run: pip install "snakemake>=8"
+      - name: Run tests
+        run: pytest -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t orf-profiler .
+      - name: Run a scan inside the container
+        run: |
+          docker run --rm -v "$PWD/tests/data:/data:ro" orf-profiler \
+            scan /data/tiny.fa --out /tmp/results --near-cognate

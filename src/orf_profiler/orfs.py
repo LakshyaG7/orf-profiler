@@ -13,7 +13,7 @@ from typing import Iterator, NamedTuple
 STOP_CODONS = frozenset({"TAA", "TAG", "TGA"})
 CANONICAL_START = "ATG"
 # Near-cognate start codons differ from ATG by one base. CTG, GTG and TTG are
-# the three most commonly used in ribosome-profiling studies.
+# common alternative initiation codons; others (such as ACG) are not searched.
 NEAR_COGNATE_STARTS = frozenset({"CTG", "GTG", "TTG"})
 
 
