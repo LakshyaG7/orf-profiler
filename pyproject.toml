@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orf-profiler"
+version = "0.1.0"
+description = "Find and characterize canonical and non-canonical ORFs in transcript FASTA files"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Lakshya Goenka" }]
+keywords = ["bioinformatics", "ORF", "microprotein", "translation", "GENCODE"]
+dependencies = [
+    "biopython>=1.80",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+workflow = ["snakemake>=8"]
+
+[project.urls]
+Repository = "https://github.com/LakshyaG7/orf-profiler"
+
+[project.scripts]
+orf-profiler = "orf_profiler.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
