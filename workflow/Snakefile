@@ -1,0 +1,70 @@
+# Run ORF Profiler on GENCODE human transcripts and draw the summary figures.
+#
+#   snakemake --cores 4
+#
+# FASTA files already present in the data folder are used as they are;
+# anything missing is downloaded from the GENCODE FTP site.
+
+configfile: "workflow/config.yaml"
+
+RELEASE = config["gencode_release"]
+DATA = config["data_dir"]
+RESULTS = config["results_dir"]
+DATASETS = ["pc", "lncRNA"]  # protein-coding and long non-coding RNA transcripts
+FIGURES = ["orf_length_by_class", "kozak_by_class"]
+
+GENCODE_URL = (
+    "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/"
+    "release_{release}/gencode.v{release}.{dataset}_transcripts.fa.gz"
+)
+
+
+wildcard_constraints:
+    dataset="|".join(DATASETS),
+
+
+rule all:
+    input:
+        expand(f"{RESULTS}/figures/{{figure}}.png", figure=FIGURES),
+
+
+rule download:
+    output:
+        f"{DATA}/gencode.v{RELEASE}.{{dataset}}_transcripts.fa.gz",
+    params:
+        url=lambda wildcards: GENCODE_URL.format(release=RELEASE, dataset=wildcards.dataset),
+    shell:
+        "curl --fail --location --silent --show-error --output {output} {params.url}"
+
+
+rule scan:
+    input:
+        f"{DATA}/gencode.v{RELEASE}.{{dataset}}_transcripts.fa.gz",
+    output:
+        orfs=f"{RESULTS}/{{dataset}}/orfs.tsv.gz",
+        peptides=f"{RESULTS}/{{dataset}}/peptides.fa.gz",
+        run_info=f"{RESULTS}/{{dataset}}/run_info.json",
+        class_summary=f"{RESULTS}/{{dataset}}/class_summary.tsv",
+        length_hist=f"{RESULTS}/{{dataset}}/length_hist.tsv",
+        kozak=f"{RESULTS}/{{dataset}}/kozak_by_class.tsv",
+    params:
+        out_dir=f"{RESULTS}/{{dataset}}",
+        near_cognate="--near-cognate" if config["near_cognate"] else "",
+        min_aa=config["min_aa"],
+    threads: workflow.cores
+    shell:
+        "orf-profiler scan {input} --out {params.out_dir} --min-aa {params.min_aa} "
+        "{params.near_cognate} --threads {threads} --gzip"
+
+
+rule plot:
+    input:
+        expand(f"{RESULTS}/{{dataset}}/length_hist.tsv", dataset=DATASETS),
+        expand(f"{RESULTS}/{{dataset}}/kozak_by_class.tsv", dataset=DATASETS),
+    output:
+        expand(f"{RESULTS}/figures/{{figure}}.png", figure=FIGURES),
+    params:
+        result_dirs=expand(f"{RESULTS}/{{dataset}}", dataset=DATASETS),
+        out_dir=f"{RESULTS}/figures",
+    shell:
+        "orf-profiler plot {params.result_dirs} --out {params.out_dir}"

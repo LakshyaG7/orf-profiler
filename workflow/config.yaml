@@ -1,0 +1,14 @@
+# GENCODE human release to analyze
+gencode_release: 50
+
+# Where the GENCODE FASTA files live. Missing files are downloaded here.
+data_dir: data
+
+# Where results and figures are written
+results_dir: results
+
+# Shortest ORF to report, in amino acids
+min_aa: 10
+
+# Also report ORFs that start at CTG, GTG or TTG upstream of the first ATG
+near_cognate: true
